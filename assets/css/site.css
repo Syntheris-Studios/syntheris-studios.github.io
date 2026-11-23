@@ -262,6 +262,11 @@ h3{font-size:1.12rem;margin:0 0 6px;font-weight:600}
 }
 /* Wide (16:9 landscape) poster — Home closer. */
 .poster-figure.wide img{max-width:960px}
+/* Research-paper infographic — Software page. Wider than the poster cap
+   so the small text stays legible. */
+.poster-figure.infographic{margin:34px auto 0}
+.poster-figure.infographic img{max-width:680px}
+.poster-figure.infographic figcaption{font-size:.86rem;color:var(--text-3);margin-top:10px}
 /* About: robot hand in the main column (NOT the portrait column, which
    already stacks three figures). */
 .about-figure{margin:28px 0 0;max-width:440px}
