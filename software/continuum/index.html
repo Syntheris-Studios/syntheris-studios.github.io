@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="../../assets/img/favicon.png">
+<title>Syntheris Continuum — Precision interpolation for AI-generated video</title>
+<meta name="description" content="Syntheris Continuum V5.1.0 is a local Windows video interpolation application built around RIFE v4.26 — duration preservation, ATFI error handling and fallback, exact FPS targeting, and research-oriented presets.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/css/site.css">
+<style>
+  :root{
+    --bg:#080c18;
+    --bg-2:#0b1122;
+    --surface:#10182e;
+    --surface-2:#141e38;
+    --line:#1e2c4f;
+    --line-bright:#2a3d68;
+    --cyan:#0edaf6;
+    --cyan-dim:#7dd7e8;
+    --magenta:#ff2283;
+    --teal:#32ddc1;
+    --text:#e8f2f8;
+    --text-2:#a9bdd1;
+    --text-3:#7f95ad;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{animation:none!important; transition:none!important} }
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+  img{max-width:100%;display:block}
+  a{color:var(--cyan)}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  button,[role="button"],a.btn{min-height:44px}
+
+  /* ---------- HERO ---------- */
+  .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line);background:var(--bg)}
+  .hero-grid-bg{position:absolute;inset:0;opacity:.5;pointer-events:none;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:56px 56px;
+    -webkit-mask-image:radial-gradient(ellipse 90% 70% at 50% 30%,#000 0%,transparent 72%);
+            mask-image:radial-gradient(ellipse 90% 70% at 50% 30%,#000 0%,transparent 72%);
+    opacity:.28}
+  .hero-inner{position:relative;padding:28px 0 56px;text-align:center}
+  .hero-top{display:flex;align-items:center;justify-content:space-between;gap:16px;text-align:left;padding:6px 0 10px}
+  .hero-top .ver{font-family:"IBM Plex Mono",monospace;font-size:.78rem;letter-spacing:.14em;color:var(--text-3);text-transform:uppercase}
+  .hero-top .ver b{color:var(--cyan);font-weight:600}
+  .badge-open{display:inline-flex;align-items:center;gap:8px;font-family:"IBM Plex Mono",monospace;font-size:.75rem;letter-spacing:.08em;color:var(--teal);border:1px solid var(--line-bright);padding:8px 12px;border-radius:999px;background:var(--bg-2)}
+  .badge-open i{width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block}
+  .wordmark{width:min(620px,92vw);margin:18px auto 0}
+  .tagline{margin:6px auto 0;max-width:640px;font-size:clamp(1.25rem,3.4vw,1.9rem);line-height:1.25;font-weight:600;letter-spacing:-.01em}
+  .tagline em{font-style:normal;color:var(--cyan)}
+  .hero-sub{margin:16px auto 0;max-width:620px;color:var(--text-2);font-size:1.02rem}
+  .hero-cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:28px}
+  .btn{display:inline-flex;align-items:center;gap:10px;padding:12px 22px;border-radius:10px;font-weight:600;font-size:.98rem;text-decoration:none;border:1px solid transparent;cursor:pointer}
+  .btn-primary{background:var(--cyan);color:#04121a}
+  .btn-primary:hover{background:#3fe3f8}
+  .btn-ghost{background:transparent;color:var(--text);border-color:var(--line-bright)}
+  .btn-ghost:hover{border-color:var(--cyan);color:var(--cyan)}
+  .btn svg{flex:none}
+  .hero-rule{width:180px;height:3px;margin:34px auto 0;background:var(--cyan);position:relative}
+  .hero-rule::after{content:"";position:absolute;right:-46px;top:0;width:38px;height:3px;background:var(--magenta)}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin:38px auto 0;max-width:920px;text-align:left}
+  .stat{background:var(--bg-2);padding:16px 18px}
+  .stat .k{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.13em;text-transform:uppercase;color:var(--text-3)}
+  .stat .v{margin-top:5px;font-weight:600;font-size:1.02rem;line-height:1.3}
+  .stat .v span{color:var(--cyan)}
+  @media (max-width:720px){ .stats{grid-template-columns:1fr 1fr} .hero-top{flex-direction:column;align-items:flex-start} }
+
+  /* ---------- SECTIONS ---------- */
+  section{padding:64px 0}
+  section + section{border-top:1px solid var(--line)}
+  .sec-head{max-width:720px}
+  .sec-label{font-family:"IBM Plex Mono",monospace;font-size:.75rem;letter-spacing:.16em;text-transform:uppercase;color:var(--magenta);display:flex;align-items:center;gap:10px}
+  .sec-label::before{content:"";width:26px;height:2px;background:var(--magenta)}
+  h2{font-size:clamp(1.6rem,3.6vw,2.3rem);line-height:1.15;margin:12px 0 10px;letter-spacing:-.015em;font-weight:700}
+  h3{font-size:1.12rem;margin:0 0 6px;font-weight:600}
+  .sec-head p{color:var(--text-2);margin:0;font-size:1.02rem}
+  p{color:var(--text-2)}
+  strong{color:var(--text);font-weight:600}
+
+  /* What it does */
+  .does-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:36px;align-items:start;margin-top:8px}
+  @media (max-width:860px){ .does-grid{grid-template-columns:1fr} }
+  .does-copy p:first-child{margin-top:0;font-size:1.06rem;color:var(--text-2)}
+  .place-note{border:1px solid var(--line);border-left:3px solid var(--teal);background:var(--bg-2);padding:16px 18px;border-radius:0 10px 10px 0;margin-top:22px}
+  .place-note p{margin:0;font-size:.95rem}
+  .place-note .mono{color:var(--teal);font-size:.72rem;letter-spacing:.13em;text-transform:uppercase;display:block;margin-bottom:6px}
+  .mark-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:28px;text-align:center}
+  .mark-card img{width:210px;margin:0 auto}
+  .mark-card .cap{margin-top:16px;font-family:"IBM Plex Mono",monospace;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+  .mark-card .cap b{color:var(--cyan);font-weight:600}
+  .mini-flow{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:20px;font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--text-2)}
+  .mini-flow .node{border:1px solid var(--line-bright);border-radius:8px;padding:7px 10px;background:var(--bg-2)}
+  .mini-flow .arr{color:var(--magenta)}
+
+  /* Innovations */
+  .innov-list{margin-top:34px;border-top:1px solid var(--line)}
+  .innov{border-bottom:1px solid var(--line)}
+  .innov-btn{width:100%;display:flex;align-items:flex-start;gap:18px;background:none;border:0;color:var(--text);text-align:left;padding:22px 4px;cursor:pointer;font-family:inherit}
+  .innov-num{font-family:"IBM Plex Mono",monospace;color:var(--cyan);font-size:.85rem;font-weight:600;padding-top:3px;min-width:34px}
+  .innov-btn .t{flex:1}
+  .innov-btn .t .title{font-size:1.14rem;font-weight:600;line-height:1.3;display:block}
+  .innov-btn .t .short{color:var(--text-2);font-size:.95rem;display:block;margin-top:3px}
+  .innov-chevron{flex:none;width:34px;height:34px;border:1px solid var(--line-bright);border-radius:50%;display:grid;place-items:center;color:var(--cyan);transition:transform .25s ease;margin-top:2px}
+  .innov.open .innov-chevron{transform:rotate(45deg);border-color:var(--cyan)}
+  .innov-body{display:none;padding:2px 4px 26px 52px;max-width:860px}
+  .innov.open .innov-body{display:block}
+  .innov-body p{margin:0 0 12px;font-size:.98rem}
+  .code-refs{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .code-refs span{font-family:"IBM Plex Mono",monospace;font-size:.74rem;color:var(--cyan-dim);background:var(--bg-2);border:1px solid var(--line);padding:6px 9px;border-radius:7px}
+  @media (max-width:640px){ .innov-body{padding-left:4px} .innov-num{min-width:26px} }
+
+  /* Pipeline */
+  .pipe{margin-top:36px}
+  .pipe-track{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+  @media (max-width:900px){ .pipe-track{grid-template-columns:repeat(3,1fr)} }
+  @media (max-width:540px){ .pipe-track{grid-template-columns:repeat(2,1fr)} }
+  .pipe-step{background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:16px 14px;cursor:pointer;text-align:left;color:var(--text);font-family:inherit;width:100%}
+  .pipe-step:hover{border-color:var(--line-bright)}
+  .pipe-step.active{border-color:var(--cyan);background:var(--surface)}
+  .pipe-step .n{font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--magenta);letter-spacing:.1em}
+  .pipe-step .name{font-weight:600;font-size:.94rem;line-height:1.3;margin-top:6px;display:block}
+  .pipe-detail{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:22px}
+  .pipe-detail h3{color:var(--cyan)}
+  .pipe-detail p{margin:0;max-width:820px}
+  .flow-line{margin-top:30px;font-family:"IBM Plex Mono",monospace;font-size:.82rem;color:var(--text-2);background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-wrap:anywhere;line-height:1.9}
+  .flow-line b{color:var(--cyan);font-weight:500}
+  .flow-line i{color:var(--magenta);font-style:normal;padding:0 2px}
+
+  /* FPS callout */
+  .fps-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:34px}
+  @media (max-width:820px){ .fps-grid{grid-template-columns:1fr} }
+  .panel{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius);padding:24px}
+  .panel h3{margin-bottom:8px}
+  .panel p{font-size:.96rem;margin:0 0 10px}
+  .panel p:last-child{margin-bottom:0}
+  .cmd{font-family:"IBM Plex Mono",monospace;font-size:.84rem;background:#05080f;border:1px solid var(--line);border-radius:9px;padding:13px 15px;color:var(--text);overflow-wrap:anywhere;margin:12px 0}
+  .cmd .flag{color:var(--cyan)} .cmd .bad{color:var(--magenta);text-decoration:line-through;text-decoration-thickness:1px}
+  table.rates{width:100%;border-collapse:collapse;font-size:.93rem;margin-top:6px}
+  table.rates th{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.11em;text-transform:uppercase;color:var(--text-3);text-align:left;padding:8px 8px 8px 0;border-bottom:1px solid var(--line-bright)}
+  table.rates td{padding:10px 8px 10px 0;border-bottom:1px solid var(--line);color:var(--text-2);vertical-align:top}
+  table.rates td:first-child{color:var(--text);font-weight:600;white-space:nowrap}
+  table.rates tr:last-child td{border-bottom:0}
+  .warn{color:var(--magenta)}
+
+  /* Requirements / setup */
+  .req-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:34px;align-items:start}
+  @media (max-width:860px){ .req-grid{grid-template-columns:1fr} }
+  ul.req{list-style:none;margin:6px 0 0;padding:0}
+  ul.req li{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:.97rem;color:var(--text-2)}
+  ul.req li:last-child{border-bottom:0}
+  ul.req li b{color:var(--text)}
+  ul.req .dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--cyan);margin-top:9px}
+  ul.req li:nth-child(3n) .dot{background:var(--teal)}
+  ul.req li:nth-child(4n) .dot{background:var(--magenta)}
+  .steps{counter-reset:step;list-style:none;margin:6px 0 0;padding:0}
+  .steps li{position:relative;padding:0 0 22px 52px}
+  .steps li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:0;width:36px;height:36px;border-radius:50%;border:1px solid var(--cyan);color:var(--cyan);font-family:"IBM Plex Mono",monospace;font-weight:600;display:grid;place-items:center;font-size:.95rem;background:var(--bg)}
+  .steps li:not(:last-child)::after{content:"";position:absolute;left:17.5px;top:42px;bottom:2px;width:1px;background:var(--line-bright)}
+  .steps li:last-child{padding-bottom:4px}
+  .steps h3{font-size:1rem}
+  .steps p{margin:0;font-size:.94rem}
+  .steps code,.inline-code{font-family:"IBM Plex Mono",monospace;font-size:.86em;background:var(--surface-2);border:1px solid var(--line);padding:2px 6px;border-radius:6px;color:var(--cyan-dim)}
+  .addr{font-family:"IBM Plex Mono",monospace;color:var(--teal);font-size:.92rem}
+
+  /* Boundaries */
+  .bounds{background:var(--bg-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .bounds-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:32px}
+  @media (max-width:760px){ .bounds-grid{grid-template-columns:1fr} }
+  .bound{display:flex;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .bound .ic{flex:none;width:38px;height:38px;border-radius:9px;border:1px solid var(--line-bright);display:grid;place-items:center;color:var(--magenta)}
+  .bound h3{font-size:.99rem}
+  .bound p{margin:0;font-size:.92rem}
+  .evidence{margin-top:22px;border:1px dashed var(--line-bright);border-radius:12px;padding:18px 20px;display:flex;gap:14px;align-items:flex-start}
+  .evidence .ic{color:var(--teal);flex:none;margin-top:2px}
+  .evidence p{margin:0;font-size:.95rem}
+
+  /* CTA */
+  .cta{text-align:center}
+  .cta img.mark{width:120px;margin:0 auto 8px}
+  .cta h2{margin-top:14px}
+  .cta p{max-width:560px;margin:0 auto}
+  .cta .hero-cta{margin-top:26px}
+  .license-note{margin:26px auto 0;max-width:640px;font-size:.88rem;color:var(--text-3)}
+  .license-note b{color:var(--text-2)}
+
+  footer{border-top:1px solid var(--line);padding:30px 0 40px}
+  .foot{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
+  .foot-left{display:flex;align-items:center;gap:12px;color:var(--text-3);font-size:.88rem}
+  .foot-left img{width:34px;height:34px;border-radius:8px}
+  .foot a{color:var(--text-2);text-decoration:none;font-size:.88rem;padding:8px 4px;display:inline-block}
+  .foot a:hover{color:var(--cyan)}
+  .foot-links{display:flex;gap:18px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap site-header-inner">
+    <a class="brand" href="../../" aria-label="Syntheris Studios — home">
+      <img class="brand-emblem" src="../../assets/img/emblem-cyan.png" alt="Syntheris Studios emblem — a glowing cyan S swirl">
+      <img class="brand-wordmark" src="../../assets/img/wordmark-chrome.png" alt="Syntheris Studios">
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="../../">Home</a>
+      <a href="../" aria-current="page">Software</a>
+      <a href="../../publishing/">Publishing</a>
+      <a href="../../journal/">Journal</a>
+      <a href="../../about/">About</a>
+      <a href="../../contact/">Contact</a>
+    </nav>
+  </div>
+</header>
+
+
+<!-- ================= HERO ================= -->
+<header class="hero">
+  <div class="hero-grid-bg" aria-hidden="true"></div>
+  <div class="wrap hero-inner">
+    <div class="hero-top">
+      <div class="ver">Syntheris Studios &nbsp;·&nbsp; <b>V5.1.0</b> &nbsp;·&nbsp; Open source</div>
+      <div class="badge-open"><i></i> MIT-LICENSED CODE</div>
+    </div>
+
+    <img class="wordmark" src="../../assets/continuum/wordmark.png" alt="Syntheris Continuum — Video Processor wordmark">
+    <h1 class="tagline">Precision interpolation for <em>AI-generated video</em>.</h1>
+    <p class="hero-sub">A local Windows application that generates intermediate frames to change a clip's frame rate — with duration preservation, fortified error handling, and research-oriented presets wrapped around RIFE v4.26.</p>
+
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="https://github.com/Syntheris-Studios/syntheris-continuum" target="_blank" rel="noopener">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        View on GitHub
+      </a>
+      <a class="btn btn-ghost" href="#setup">How to install</a>
+    </div>
+
+    <div class="hero-rule" aria-hidden="true"></div>
+
+    <div class="stats" role="list" aria-label="Release facts">
+      <div class="stat" role="listitem"><div class="k">Engine</div><div class="v">RIFE <span>v4.26</span> interpolation</div></div>
+      <div class="stat" role="listitem"><div class="k">Runtime</div><div class="v">PyTorch <span>2.7.1+cu128</span></div></div>
+      <div class="stat" role="listitem"><div class="k">Validation</div><div class="v"><span>45 tests</span> passed · 1 skipped</div></div>
+      <div class="stat" role="listitem"><div class="k">License</div><div class="v">Code <span>MIT</span> · brand reserved</div></div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= WHAT IT DOES ================= -->
+<section id="what">
+  <div class="wrap">
+    <div class="does-grid">
+      <div class="does-copy">
+        <div class="sec-head">
+          <div class="sec-label">What it does</div>
+          <h2>Frame interpolation, engineered to finish the job</h2>
+        </div>
+        <p>Syntheris Continuum takes a finished clip and generates the frames in between — turning, for example, a 24&nbsp;fps AI-generated shot into smooth 60&nbsp;fps footage. A Gradio web interface brings together RIFE inference and FFmpeg preparation, assembly, and audio handling in one local pipeline.</p>
+        <p>It exposes controls for <strong>scene handling</strong>, <strong>motion adaptation</strong>, and <strong>batch processing</strong>, and it validates what it produces: durations are recorded, checked, and corrected, and failures are caught, logged, and retried through a fallback path instead of silently dropping segments.</p>
+        <p>Everything runs on your own machine. No uploads, no queue, no account — your clips never leave the workstation.</p>
+        <div class="place-note">
+          <span class="mono">Where it sits</span>
+          <p>Continuum lives <strong>between clip generation or capture and editing</strong>. It is a focused interpolation tool — not a full editor, and not a restoration suite.</p>
+        </div>
+      </div>
+      <div>
+        <div class="mark-card">
+          <img src="../../assets/continuum/cmark.png" alt="Syntheris Continuum C/play mark — a cyan C formed like a timeline gauge, with a play triangle at its centre and a magenta dot">
+          <div class="cap">The <b>C / Play</b> mark · flat vector · minimum size 24 px</div>
+          <div class="mini-flow" aria-label="Pipeline in brief">
+            <span class="node">Clip in</span><span class="arr">→</span>
+            <span class="node">RIFE frames</span><span class="arr">→</span>
+            <span class="node">Validated out</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= INNOVATIONS ================= -->
+<section id="innovations">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-label">Innovations</div>
+      <h2>Engineering around the model</h2>
+      <p>Continuum does not claim a new interpolation model. Its contribution is the engineering built around RIFE — the checks, fallbacks, and timestamp discipline that make interpolation dependable on real clips. Tap any item to open it.</p>
+    </div>
+
+    <div class="innov-list">
+      <div class="innov open">
+        <button class="innov-btn" aria-expanded="true">
+          <span class="innov-num">01</span>
+          <span class="t"><span class="title">Duration preservation</span><span class="short">The output keeps the source timeline — checked at every stage, corrected when it drifts.</span></span>
+          <span class="innov-chevron" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        </button>
+        <div class="innov-body">
+          <p>The processor records the source duration, checks intermediate and final durations, and attempts correction through trimming or cloned-frame padding when necessary. Quality checks compare duration and frame-count relationships across the pipeline, so a clip that goes in at 10.00 seconds comes out at 10.00 seconds — not a few frames short.</p>
+          <p>These checks aim to keep the timeline stable; they do not guarantee invisible corrections or success on every input.</p>
+          <div class="code-refs"><span>core/processor.py</span><span>core/quality_assurance.py</span><span>core/media_utils.py</span></div>
+        </div>
+      </div>
+
+      <div class="innov">
+        <button class="innov-btn" aria-expanded="false">
+          <span class="innov-num">02</span>
+          <span class="t"><span class="title">ATFI error handling &amp; fallback</span><span class="short">Motion-adaptive processing that degrades gracefully instead of failing silently.</span></span>
+          <span class="innov-chevron" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        </button>
+        <div class="innov-body">
+          <p>Motion-adaptive ATFI processing adds analysis and selective interpolation around the backend. When a segment fails, the processor catches the failure, logs diagnostic details, and attempts direct interpolation through its fallback method. If that also fails, it can retain the original segment — so completion does not necessarily mean every segment received interpolation.</p>
+          <p>Timeout handling and GPU cleanup improve failure visibility, without promising a universal completion rate.</p>
+          <div class="code-refs"><span>core/atfi.py</span><span>core/atfi_fortified.py</span><span>processor.py · _fallback_interpolation</span></div>
+        </div>
+      </div>
+
+      <div class="innov">
+        <button class="innov-btn" aria-expanded="false">
+          <span class="innov-num">03</span>
+          <span class="t"><span class="title">RIFE v4.26 &amp; exact FPS targeting</span><span class="short">Fractional frame rates handled exactly — 59.94 stays 59.94, never truncated to 59.</span></span>
+          <span class="innov-chevron" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        </button>
+        <div class="innov-body">
+          <p>The release includes v4.26 configuration and detection support, with fractional FPS command construction. The command builder passes a decimal <span class="inline-code">--fps</span> value; it does not pass unsupported <span class="inline-code">--fps_num</span> / <span class="inline-code">--fps_den</span> switches. Preset metadata carries rational rates such as 60000/1001, while the effective command uses the requested target FPS.</p>
+          <p>Check the actual selected rate rather than assuming a preset name means exactly 60 fps. The bundled HDv3 weight's exact upstream release is undocumented — a v4.26 capability label does not identify that weight.</p>
+          <div class="code-refs"><span>backends/rife_v426_config.py</span><span>backends/rife_v426_manager.py</span><span>Practical-RIFE/inference_video.py</span></div>
+        </div>
+      </div>
+
+      <div class="innov">
+        <button class="innov-btn" aria-expanded="false">
+          <span class="innov-num">04</span>
+          <span class="t"><span class="title">Research-oriented presets &amp; PTS handling</span><span class="short">Presets encode FPS, scene, and skipping choices — and timestamps are reset, not accumulated.</span></span>
+          <span class="innov-chevron" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        </button>
+        <div class="innov-body">
+          <p>The project's “research-validated” terminology refers to configurations and checks informed by retained research notes — it is not an independent certification. Timestamp-reset helpers and segment concatenation address timebase accumulation: the repaired concat-demuxer path resets each input to zero and lets the demuxer advance the timeline.</p>
+          <p>The current crossfade-filter builder uses simple concatenation to avoid duplication; this release does not promise crossfade joins.</p>
+          <div class="code-refs"><span>segments.py · _concat_with_pts_reset</span><span>segments.py · _build_crossfade_filter</span><span>core/media_utils.py</span></div>
+        </div>
+      </div>
+
+      <div class="innov">
+        <button class="innov-btn" aria-expanded="false">
+          <span class="innov-num">05</span>
+          <span class="t"><span class="title">Batch processing &amp; media handling</span><span class="short">Per-file status and errors, scene segmentation, audio handling, and output validation.</span></span>
+          <span class="innov-chevron" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        </button>
+        <div class="innov-body">
+          <p>Batch orchestration tracks per-file status and errors across a whole queue. Scene segmentation, optional CFR preparation, audio extraction and muxing, and output validation surround the inference step.</p>
+          <p>Recovery paths can change the result — for example, emergency audio handling may preserve video without audio. Review logs and outputs before delivery.</p>
+          <div class="code-refs"><span>core/batch_processor.py</span><span>core/segments.py</span><span>ui/gradio_interface_modular.py</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HOW IT WORKS ================= -->
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-label">How it works</div>
+      <h2>One pipeline, six stages</h2>
+      <p>Select a stage to see what happens inside it. RIFE runs on PyTorch; FFmpeg and ffprobe handle media operations and inspection; OpenCV and NumPy support image and numerical work.</p>
+    </div>
+
+    <div class="pipe">
+      <div class="pipe-track" role="tablist" aria-label="Pipeline stages">
+        <button class="pipe-step active" role="tab" aria-selected="true" data-stage="0"><span class="n">STAGE 1</span><span class="name">Launch</span></button>
+        <button class="pipe-step" role="tab" aria-selected="false" data-stage="1"><span class="n">STAGE 2</span><span class="name">Inspect &amp; prepare</span></button>
+        <button class="pipe-step" role="tab" aria-selected="false" data-stage="2"><span class="n">STAGE 3</span><span class="name">Segment</span></button>
+        <button class="pipe-step" role="tab" aria-selected="false" data-stage="3"><span class="n">STAGE 4</span><span class="name">Interpolate</span></button>
+        <button class="pipe-step" role="tab" aria-selected="false" data-stage="4"><span class="n">STAGE 5</span><span class="name">Assemble &amp; audio</span></button>
+        <button class="pipe-step" role="tab" aria-selected="false" data-stage="5"><span class="n">STAGE 6</span><span class="name">Validate</span></button>
+      </div>
+      <div class="pipe-detail" id="pipeDetail" aria-live="polite">
+        <h3 id="pipeTitle">Launch — Windows launcher → Gradio UI</h3>
+        <p id="pipeText">The Windows launcher starts the quick launcher, which serves the Gradio interface locally — normally at http://127.0.0.1:7860. Input settings, presets, and processing output all live in that one browser page, backed entirely by the local machine.</p>
+      </div>
+      <div class="flow-line" aria-label="Architecture flow">Windows launcher <i>→</i> quick_launcher <i>→</i> <b>Gradio UI</b> <i>→</i> VideoProcessor / batch orchestration <i>→</i> <b>RIFE + FFmpeg</b> <i>→</i> validation and output</div>
+    </div>
+
+    <div class="fps-grid">
+      <div class="panel">
+        <h3>Exact FPS, down to the fraction</h3>
+        <p>Broadcast and AI-video rates are rarely whole numbers. Continuum's command builder preserves fractional FPS end to end — the repair that stopped 59.94 from being truncated to 59 is covered by a dedicated regression test.</p>
+        <div class="cmd">inference_video.py <span class="flag">--fps 59.94</span> &nbsp;<span class="bad">--fps_num</span> <span class="bad">--fps_den</span></div>
+        <p>The struck-through flags don't exist in the bundled CLI — an earlier test expected them, and the expectation was wrong, not the tool.</p>
+      </div>
+      <div class="panel">
+        <h3>Rates that matter</h3>
+        <table class="rates">
+          <tr><th>Conversion</th><th>What happens</th></tr>
+          <tr><td>24 → 60 fps</td><td>2.5× multiplier — the primary research preset case</td></tr>
+          <tr><td>24 → 30 fps</td><td>Quality-focused, duration-preserved conversion</td></tr>
+          <tr><td>59.94 fps</td><td>60000/1001 rational rate, passed as an exact decimal</td></tr>
+          <tr><td>Any → CFR</td><td>Optional constant-frame-rate preparation before inference</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= REQUIREMENTS & SETUP ================= -->
+<section id="setup">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-label">Requirements &amp; setup</div>
+      <h2>Running in about four minutes</h2>
+      <p>The source release ships application code and a RIFE weight — no installed Python environment and no bundled FFmpeg. Setup builds the environment locally, on each machine.</p>
+    </div>
+
+    <div class="req-grid">
+      <div class="panel">
+        <h3>What you need</h3>
+        <ul class="req">
+          <li><span class="dot"></span><span><b>Windows</b> — the launcher and setup are Windows-first</span></li>
+          <li><span class="dot"></span><span><b>64-bit Python 3.11</b> — existing install; setup never installs or repairs system Python</span></li>
+          <li><span class="dot"></span><span><b>FFmpeg &amp; ffprobe</b> on PATH</span></li>
+          <li><span class="dot"></span><span><b>NVIDIA GPU + compatible driver</b> — one pinned set serves both RTX 4080 and RTX 5090: PyTorch 2.7.1+cu128, torchvision 0.22.1+cu128, torchaudio 2.7.1+cu128</span></li>
+          <li><span class="dot"></span><span><b>Internet access</b> for setup downloads, and disk / RAM / VRAM sufficient for your clips</span></li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Setup — three steps</h3>
+        <ol class="steps">
+          <li>
+            <h3>Run <code>setup.bat</code></h3>
+            <p>Creates the app-local <code>.venv</code>, installs the pinned requirements, checks imports and dependencies, exercises the compute device, verifies FFmpeg — and creates the <strong>Syntheris Continuum desktop shortcut</strong> with the official icon. Accepts <code>-PythonExe</code> and <code>-NonInteractive</code>.</p>
+          </li>
+          <li>
+            <h3>Launch</h3>
+            <p>Open the <strong>Syntheris Continuum</strong> desktop shortcut, or run <code>windows_launcher.bat</code>. The launcher uses only the local venv and points you back to setup if it's missing.</p>
+          </li>
+          <li>
+            <h3>Open the interface</h3>
+            <p>Go to the local address the launcher prints — normally <span class="addr">http://127.0.0.1:7860</span> — pick a research preset, drop in a clip, and process.</p>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= BOUNDARIES ================= -->
+<section class="bounds" id="boundaries">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-label">Honest boundaries</div>
+      <h2>What V5.1.0 does not claim</h2>
+      <p>Stated plainly, because a tool you run on production footage should tell you where its evidence ends.</p>
+    </div>
+
+    <div class="bounds-grid">
+      <div class="bound">
+        <div class="ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M8 11h6"/></svg></div>
+        <div><h3>No AI upscaler integrated</h3><p>Interpolation preserves output resolution. Scale / UHD settings control RIFE's internal interpolation scale — they are not super-resolution.</p></div>
+      </div>
+      <div class="bound">
+        <div class="ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3.2"/></svg></div>
+        <div><h3>RTX 4080 not physically tested</h3><p>One pin set is intended for both RTX 4080 and RTX 5090, and real CUDA kernel execution was verified on an RTX 5090. The 4080 was not physically tested in this release pass, and CPU verification is not a promise of practical CPU throughput.</p></div>
+      </div>
+      <div class="bound">
+        <div class="ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 17.5 9.5 11l3.5 3.5L20.5 7"/><path d="M15 7h5.5v5.5" opacity=".45"/></svg></div>
+        <div><h3>No re-certified benchmarks</h3><p>No performance, quality-improvement, or reliability benchmark is re-certified in this release. Older numeric claims in historical documents are just that — historical. The retired performance test module provides no benchmark coverage.</p></div>
+      </div>
+      <div class="bound">
+        <div class="ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg></div>
+        <div><h3>Model provenance, documented</h3><p>The bundled HDv3 weight is MIT-licensed, but its exact upstream release is undocumented — checked against the official Practical-RIFE archives without a hash match, and recorded openly in MODEL_PROVENANCE.md. No FILM backend or FILM model is shipped.</p></div>
+      </div>
+    </div>
+
+    <div class="evidence">
+      <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+      <p><strong>What was verified:</strong> fresh setup end-to-end on Python 3.11.9, RTX 5090 kernel execution, 45 passing configured tests with one documented legacy-module skip, and the Windows launcher serving the UI over HTTP. Those checks do not certify every real-world clip or production reliability — and the page won't pretend otherwise.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="cta" id="get">
+  <div class="wrap">
+    <img class="mark" src="../../assets/continuum/favicon.png" alt="Syntheris Continuum icon — cyan C/play mark">
+    <div class="sec-label" style="justify-content:center">Get Continuum</div>
+    <h2>Open source. Yours to run.</h2>
+    <p>Clone the repository, run setup, and interpolate your first clip tonight. Issues, research notes, and the full documentation live alongside the code.</p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="https://github.com/Syntheris-Studios/syntheris-continuum" target="_blank" rel="noopener">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        github.com/Syntheris-Studios/syntheris-continuum
+      </a>
+    </div>
+    <p class="license-note"><b>Licensing:</b> Syntheris-owned code is MIT — Copyright (c) 2025 Syntheris Studios Inc. <b>Brand assets are excluded</b> from the MIT license and remain the property of Syntheris Studios Inc., all rights reserved. Third-party code, weights, and runtimes — including PyTorch / CUDA and NVIDIA terms — retain their own licenses.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <div class="foot-left">
+      <img src="../../assets/continuum/favicon.png" alt="">
+      <span>Syntheris Continuum V5.1.0 · © 2025 Syntheris Studios Inc.</span>
+    </div>
+    <nav class="foot-links" aria-label="Page sections">
+      <a href="#what">What it does</a>
+      <a href="#innovations">Innovations</a>
+      <a href="#how">How it works</a>
+      <a href="#setup">Setup</a>
+      <a href="#boundaries">Boundaries</a>
+      <a href="https://github.com/Syntheris-Studios/syntheris-continuum" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // Innovations accordion
+  var items = document.querySelectorAll('.innov');
+  items.forEach(function(item){
+    var btn = item.querySelector('.innov-btn');
+    btn.addEventListener('click', function(){
+      var isOpen = item.classList.contains('open');
+      items.forEach(function(i){ i.classList.remove('open'); i.querySelector('.innov-btn').setAttribute('aria-expanded','false'); });
+      if(!isOpen){ item.classList.add('open'); btn.setAttribute('aria-expanded','true'); }
+    });
+  });
+
+  // Pipeline stepper
+  var stages = [
+    { title: 'Launch — Windows launcher → Gradio UI',
+      text: 'The Windows launcher starts the quick launcher, which serves the Gradio interface locally — normally at http://127.0.0.1:7860. Input settings, presets, and processing output all live in that one browser page, backed entirely by the local machine.' },
+    { title: 'Inspect & prepare — know the clip before touching it',
+      text: 'The processor inspects the input with ffprobe, records its source duration and frame-rate, and can prepare a constant-frame-rate (CFR) version when the source needs rate standardization before inference.' },
+    { title: 'Segment — scene-aware splitting',
+      text: 'The clip is split into scene segments so interpolation respects cuts instead of blending across them. Segmentation also bounds the work: each segment is processed, checked, and — if needed — recovered independently.' },
+    { title: 'Interpolate — RIFE, with ATFI and a fallback',
+      text: 'Each segment runs through RIFE inference, optionally with motion-adaptive ATFI analysis and selective interpolation. Failures are caught and logged, retried through direct fallback interpolation, and — as a last resort — the original segment is retained.' },
+    { title: 'Assemble & audio — timestamps reset, not accumulated',
+      text: 'Segments are concatenated with per-input PTS reset so timebase errors do not accumulate across joins. Audio is extracted and muxed back; emergency audio handling can preserve the video even when audio recovery fails.' },
+    { title: 'Validate — duration and frame-count checks',
+      text: 'Final durations and frame-count relationships are compared against the source. When drift is found, correction is attempted through trimming or cloned-frame padding before the output is handed back in the interface.' }
+  ];
+  var steps = document.querySelectorAll('.pipe-step');
+  var pTitle = document.getElementById('pipeTitle');
+  var pText = document.getElementById('pipeText');
+  steps.forEach(function(step){
+    step.addEventListener('click', function(){
+      steps.forEach(function(s){ s.classList.remove('active'); s.setAttribute('aria-selected','false'); });
+      step.classList.add('active'); step.setAttribute('aria-selected','true');
+      var d = stages[parseInt(step.getAttribute('data-stage'),10)];
+      pTitle.textContent = d.title;
+      pText.textContent = d.text;
+    });
+  });
+})();
+</script>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot">
+      <div class="foot-brand">
+        <img src="../../assets/img/emblem-cyan.png" alt="">
+        <div class="fb-text"><b>Syntheris Studios Inc.</b><br>Montreal, Canada</div>
+      </div>
+      <nav class="foot-links" aria-label="Footer">
+        <a href="../">Software</a>
+        <a href="../../publishing/">Publishing</a>
+        <a href="../../journal/">Journal</a>
+        <a href="../../about/">About</a>
+        <a href="../../contact/">Contact</a>
+        <a href="https://github.com/Syntheris-Studios" target="_blank" rel="noopener">GitHub ↗</a>
+        <a href="https://www.linkedin.com/company/syntheris-studios/" target="_blank" rel="noopener">LinkedIn ↗</a>
+        <a href="https://www.facebook.com/SyntherisArt" target="_blank" rel="noopener">Facebook ↗</a>
+        <a href="https://www.instagram.com/syntherisart/" target="_blank" rel="noopener">Instagram ↗</a>
+        <a href="https://x.com/SyntherisArt" target="_blank" rel="noopener">X ↗</a>
+      </nav>
+    </div>
+    <nav class="foot-legal" aria-label="Legal">
+      <a href="../../legal/privacy/">Privacy Policy</a>
+      <a href="../../legal/terms/">Terms &amp; Conditions</a>
+      <a href="../../legal/refund/">Refund Policy</a>
+      <a href="../../legal/shipping/">Shipping Policy</a>
+      <a href="../../legal/accessibility/">Accessibility</a>
+    </nav>
+    <div class="foot-bottom">
+      <span>© 2026 Syntheris Studios Inc. All rights reserved.</span>
+      <span>Crafting tomorrow's stories by blending Art with AI innovation.</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
